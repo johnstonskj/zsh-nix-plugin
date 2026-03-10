@@ -1,10 +1,10 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name nix
-# @brief Zsh plugin to initialize nix package manager
-# @repository https://github.com/johnstonskj/zsh-nix-plugin
-# @homepage **include if different from repository URL**
-# @version 0.1.0
+# @name: nix
+# @brief: Initialize THE Nix package manager
+# @repository: https://github.com/johnstonskj/zsh-nix-plugin
+# @version: 0.1.1
+# @license: MIT AND Apache-2.0
 #
 # @description
 #
@@ -14,6 +14,8 @@
 #
 # * **NIX_PROFILE**: Name of the nix profile to use, if not set the value 'default' will be used.
 #
+
+NIX_ROOT="/nix"
 
 ############A#######################################################################################
 # @section Lifecycle
@@ -34,15 +36,23 @@ nix_plugin_init() {
     builtin emulate -L zsh
     builtin setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
 
-    # Save current state of `NIX_PROFILE` and initialize if not set.
-    @zplugin_save_global nix "${NIX_PROFILE:-default}"
+    if [[ -d "${NIX_ROOT}" ]]; then
+        # Save current state of `NIX_PROFILE` and initialize if not set.
+        @zplugins_envvar_save nix NIX_PROFILE
+        export NIX_PROFILE="${NIX_PROFILE:-default}"
 
-    # Add nix `bin` directory to path.
-    local nix_bin="/nix/var/nix/${NIX_PROFILE}/bin"
-    if [[ -d "${nix_bin}" ]]; then
-        log_error "zsh-nix: path to nix binaries doesn't exist; path: '${nix_bin}'."
+        # Add nix `bin` directory to path.
+        local nix_bin="${NIX_ROOT}/var/nix/profiles/${NIX_PROFILE}/bin"
+        if [[ -d "${nix_bin}" ]]; then
+            log_error "zsh-nix: path to nix binaries doesn't exist; path: '${nix_bin}'."
+        else
+            echo "adding nix @ ${nix_bin}"
+            @zplugins_add_to_path nix "${nix_bin}"
+        fi
+        return 0
     else
-        @zplugin_add_to_path nix nix_bin
+        log_error "zsh-nix: there's no '${NIX_ROOT}' directory, is nix installed?"
+        return 1
     fi
 }
 
@@ -53,11 +63,10 @@ nix_plugin_init() {
 #
 # @noargs
 #
-nix_plugin_unload() {
+nix_plugins_unload() {
     builtin emulate -L zsh
 
     # Reset global environment variables.
-    @zplugin_restore_global nix NIX_PROFILE
-
-    unset PLUGIN
+    @zplugin_envvar_restore nix NIX_PROFILE
+    return 0
 }
