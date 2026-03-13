@@ -39,7 +39,7 @@ nix_plugin_init() {
     if [[ -d "${NIX_ROOT}" ]]; then
         # Save current state of `NIX_PROFILE` and initialize if not set.
         @zplugins_envvar_save nix NIX_PROFILE
-        export NIX_PROFILE="${NIX_PROFILE:-default}"
+        typeset -g NIX_PROFILE="${NIX_PROFILE:-default}"
 
         # Add nix `bin` directory to path.
         local nix_bin="${NIX_ROOT}/var/nix/profiles/${NIX_PROFILE}/bin"
